@@ -1,35 +1,88 @@
 package in.incognitech.crawler;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Scanner;
 
 public class Crawler {
-	
+
 	public Crawler() {
 		// TODO Auto-generated constructor stub
 	}
 
-	public void main(String[] args){
-    	try {
-            File file = new File("Links.csv");
-            FileReader fr = new FileReader(file);
-            BufferedReader br = new BufferedReader(fr);
-            do{
-                String url = br.readLine();
-                //crawl(url);
+	static void printHelp() {
+		System.out.println("Please enter file path of a CSV file of below format.");
+		System.out.println("<site-url>, <max. no. of pages to crawl>, <restriction-domain>");
+		System.out.println("http://example.com, 1000, example.com");
+		System.out.println("<restriction-domain> is optional.");
+	}
+
+	public static void main(String[] args) {
+
+		if ( args.length != 1 ) {
+			Crawler.printHelp();
+			return;
+		}
+		
+		String filepath = args[0];
+
+        String websiteURL = "";
+        String pagesToCrawlStr = "";
+        String restrictionDomain = "";
+
+		try {
+            File file = new File(filepath);
+            Scanner inputStream = new Scanner(file);
+            inputStream.useDelimiter(",");
+            int count = 1;
+
+            while(inputStream.hasNext()){
+                //read single line, put in string
+                String data = inputStream.next();
+                data = data.replaceAll(System.getProperty("line.separator"), "");
+
+                switch(count) {
+            		case 1:
+            			websiteURL = data;
+            			break;
+            		case 2:
+            			pagesToCrawlStr = data;
+            			break;
+            		case 3:
+            			restrictionDomain = data;
+            			break;
+            	}
+            	count++;
             }
-            while(br!=null);
+            // after loop, close scanner
+            inputStream.close();
             
-        } catch (MalformedURLException ex) {
-            ex.printStackTrace();
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
-        } catch (IOException ex) {
-            ex.printStackTrace();
         }
-    }	
+
+    	if ( websiteURL.equals("") || pagesToCrawlStr.equals("") ) {
+    		Crawler.printHelp();
+    		return;
+    	}
+
+    	int pagesToCrawl = 0;
+    	try {
+    		pagesToCrawl = Integer.parseInt(pagesToCrawlStr);
+    	} catch( NumberFormatException e ) {
+    		Crawler.printHelp();
+    		return;
+    	}
+
+    	URI uri = null;
+    	try {
+			uri = new URI(websiteURL);
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			Crawler.printHelp();
+			return;
+		}
+	}
 }
