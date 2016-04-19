@@ -84,5 +84,12 @@ public class Crawler {
 			Crawler.printHelp();
 			return;
 		}
+
+    		
+    	// URL
+    	// max no to crawl
+    	// restriction
+    	
+    	// crawl()
 	}
 }
