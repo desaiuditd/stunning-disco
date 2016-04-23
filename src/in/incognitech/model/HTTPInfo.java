@@ -17,5 +17,17 @@ public class HTTPInfo {
 	public String getLink(){
 		return link;
 	}
-
+	public int getHTTPStatus() {
+		return HTTPStatus;
+	}
+	
+	public String getFileLoc() {
+		return fileLoc;
+	}
+	
+	public String getFName() {
+		return FName;
+	}
+	
+	
 }

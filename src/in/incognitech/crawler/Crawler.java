@@ -6,6 +6,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Scanner;
 
+import in.incognitech.queue.QueueManager;
+
 public class Crawler {
 
 	public Crawler() {
@@ -85,6 +87,8 @@ public class Crawler {
 			return;
 		}
 
+    	QueueManager manager = new QueueManager(uri.toString(), pagesToCrawl);
+    	manager.downloadHTMLContent();
     		
     	// URL
     	// max no to crawl
