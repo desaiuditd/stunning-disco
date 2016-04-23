@@ -9,7 +9,7 @@ public class SiteInfo {
 		// TODO Auto-generated constructor stub
 	}
 
-	ArrayList<HTTPInfo> ds;
+	ArrayList<HTTPInfo> ds = new ArrayList<HTTPInfo>();
 	public void addds(HTTPInfo data){
 		ds.add(data);
 	}

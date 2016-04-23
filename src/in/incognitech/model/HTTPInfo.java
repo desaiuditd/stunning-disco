@@ -2,10 +2,20 @@ package in.incognitech.model;
 
 public class HTTPInfo {
 
-	public HTTPInfo() {
-		// TODO Auto-generated constructor stub
-	}
-
 	int HTTPStatus;
+	String link;
+	String fileLoc;
+	String FName;
+	
+	String repLocation = "repository";
+	public HTTPInfo(int conCode, String filename, String surl){
+		HTTPStatus = conCode;
+		FName = filename;
+		link = surl;
+		fileLoc = repLocation+"\\" + FName;
+	}
+	public String getLink(){
+		return link;
+	}
 
 }
