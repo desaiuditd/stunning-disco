@@ -2,6 +2,7 @@ package in.incognitech.cleaner;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,16 +19,29 @@ import in.incognitech.queue.QueueManager;
 
 public class Cleaner {
 
+	
 	public Cleaner() {
 		// TODO Auto-generated constructor stub
 	}
 
-	public static void removeNoise(String htmlMarkup) {
+	public static void removeNoise(String htmlMarkup, int ctr) {
 		// Remove Noise
+		String filename = ".\\TextRepository\\";
 		try {
+			File dir = new File(filename);
 			String output = ArticleExtractor.getInstance().getText(htmlMarkup);
-			System.out.println(output);
+			if(!dir.exists()){
+				dir.mkdirs();
+			}
+			filename +=ctr + ".txt";
+			File file = new File(filename);
+			BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+			bw.write(output);
+			bw.close();
 		} catch (BoilerpipeProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -55,9 +69,9 @@ public class Cleaner {
 		return s;
 	}
 
-	public static void main(String args[]) {
+	/*public static void main(String args[]) {
 		String htmlMarkup = Cleaner.downloadPage("https://rtcamp.com/blog/rtbiz-new-home/");
 		Cleaner.removeNoise(htmlMarkup);
-	}
+	}*/
 
 }

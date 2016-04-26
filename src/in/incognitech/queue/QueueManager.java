@@ -20,6 +20,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import de.l3s.boilerpipe.extractors.ArticleExtractor;
+import in.incognitech.analyse.WordCount;
+import in.incognitech.cleaner.Cleaner;
 import in.incognitech.model.HTTPInfo;
 import in.incognitech.model.SiteInfo;
 
@@ -35,8 +38,11 @@ public class QueueManager implements Runnable {
 	int counter;
 	DownloadThread[] workers;
 	String sourceLink;
+	String HTMLPath = ".\\repository\\";
+	String TextPath = ".\\TextRepository\\";
+	String DomRestrict;
 
-	public QueueManager(String startSeed, int maxLinks) {
+	public QueueManager(String startSeed, int maxLinks, String RestrictDomain) {
 		Qtest = 1;
 		counter = 0;
 		newSites = new LinkedBlockingQueue<String>();
@@ -44,6 +50,7 @@ public class QueueManager implements Runnable {
 		MaxDownReq = maxLinks;
 		Qsem = new Semaphore(1);
 		sourceLink = startSeed;
+		DomRestrict = RestrictDomain;
 	}
 
 	public void downloadHTMLContent() {
@@ -54,9 +61,7 @@ public class QueueManager implements Runnable {
 		workers = new DownloadThread[maxdownThreads];
 		for (DownloadThread worker : workers) {
 			worker = new DownloadThread();
-			//System.out.println(worker.toString());
 		}
-		//System.out.println("Function ends");
 
 	}
 
@@ -72,13 +77,44 @@ public class QueueManager implements Runnable {
 				e.printStackTrace();
 			}
 		}
-		//System.out.println("Thread ends");
-
+		GenerateCrawlReport();
+		WordCount analyse = new WordCount();
+    	analyse.Analyze(TextPath);
+	}
+	
+	void GenerateCrawlReport(){
 		ArrayList<HTTPInfo> arr = sitesVisited.getSitesArray();
-		for (HTTPInfo info : arr) {
-			System.out.println("File : " + info.getFName() + " Status code : " + info.getHTTPStatus()
-					+ " File on disk : " + info.getFileLoc() + info.getFName() + " link : " + info.getLink());
+		File resFile = new File("Result.html");
+		
+		try {
+			FileWriter fw = new FileWriter(resFile);
+			BufferedWriter bw = new BufferedWriter(fw);
+			bw.write("<!DOCTYPE html>" + "\n"+
+					"<html lang=\"en\">" + "\n" +
+						"<head>" +"\n"+
+							"    <meta charset=\"utf-8\">");
+			bw.write("<title>Crawl Result</title>");
+			bw.write("</head>");
+			bw.write("<body>");
+			bw.write("<table>");
+			bw.write("<tr><th>File</th><th>Status code</th><th>File on disk</th><th>link</th></tr>");
+			for (HTTPInfo info : arr) {
+				/*bw.write("File : " + info.getFName() + " Status code : " + info.getHTTPStatus()
+						+ " File on disk : " + info.getFileLoc() + info.getFName() + " link : " + info.getLink());*/
+				bw.write("<tr><td>"+info.getFName()+"</td><td>"+info.getHTTPStatus()+"</td><td>"+info.getFileLoc()+"</td><td><a href=\""+info.getLink()+"\">"+info.getLink()+"</a></td></tr>");
+			}
+			
+			bw.write("</table>");
+			bw.write("</body>");
+			bw.write("</html>");
+			bw.close();
+			fw.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		
+		
 	}
 
 	protected synchronized void addlinksToQueue(ArrayList<String> links) {
@@ -116,6 +152,7 @@ public class QueueManager implements Runnable {
 	class DownloadThread implements Runnable {
 
 		Thread th;
+		int curCtr;
 
 		public DownloadThread() {
 			th = new Thread(this);
@@ -150,7 +187,9 @@ public class QueueManager implements Runnable {
 						Qtest--;
 						DownloadwebPage(newSites.take());
 						Qtest++;
-						Thread.sleep(100);
+						Cleaner cleaner = new Cleaner();
+						//cleaner.removeNoise(htmlMarkup);
+						Thread.sleep(30);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -161,19 +200,26 @@ public class QueueManager implements Runnable {
 		}
 
 		void DownloadwebPage(String surl) {
-			String path = ".\\repository\\";
-			counter++;
-			String filename = path + counter + ".html";
-			File file = new File(filename);
+			File dir = new File(HTMLPath);
+			if(!dir.exists()){
+				dir.mkdirs();
+			}
+			curCtr = ++counter;
+			String filename = curCtr + ".html";
+			File file = new File(HTMLPath + filename);
 			// System.out.println("File"+filename+"Current Thread :
 			// "+this.toString());
+			
 			try {
 
 				URL url = new URL(surl);
 				HttpURLConnection con = (HttpURLConnection) url.openConnection();
 				int conCode = con.getResponseCode();
 				//System.out.println(conCode);
+				
 				if (conCode == 200) {
+					HTTPInfo st = new HTTPInfo(conCode, filename, surl);
+					sitesVisited.addds(st);
 					FileWriter fw = new FileWriter(file);
 					BufferedWriter bw = new BufferedWriter(fw);
 					InputStream is = con.getInputStream();
@@ -188,14 +234,15 @@ public class QueueManager implements Runnable {
 					bw.close();
 					br.close();
 					is.close();
-				}
-				HTTPInfo st = new HTTPInfo(conCode, filename, surl);
-				sitesVisited.addds(st);
-				if (conCode == 200) {
-					ArrayList<String> links = getLinks(filename, surl);
+					ArrayList<String> links = getLinks(HTMLPath + filename, surl);
 					links = filterLinks(links);
 					addlinksToQueue(links);
 				}
+				else {
+					HTTPInfo st = new HTTPInfo(conCode, "", surl);
+					sitesVisited.addds(st);
+				}
+				
 
 			} catch (MalformedURLException e) {
 				// TODO Auto-generated catch block
@@ -209,7 +256,22 @@ public class QueueManager implements Runnable {
 
 		ArrayList<String> filterLinks(ArrayList<String> links) {
 			// This implements the code for checking the robots.txt file
-			return links;
+			ArrayList<String> neededLinks = new ArrayList<String>();
+			for(String link : links){
+				boolean addLink = true;
+				if(!DomRestrict.equals("")||DomRestrict.equals(null)){
+					if(link.indexOf(DomRestrict)<0){
+						addLink = false;
+					}
+				}
+				//Check for Robots.txt
+				
+				
+				if(addLink){
+					neededLinks.add(link);
+				}
+			}
+			return neededLinks;
 		}
 
 		ArrayList<String> getLinks(String sfname, String url) {
@@ -225,6 +287,7 @@ public class QueueManager implements Runnable {
 					beginIndex = beginIndex + 6;
 					int endIndex = annotation.indexOf("\"", beginIndex);
 					String link = annotation.substring(beginIndex, endIndex);
+					
 					if (!link.startsWith("http")) {
 						if (link.length() > 1) {
 							if (!link.startsWith("#"))
@@ -240,6 +303,7 @@ public class QueueManager implements Runnable {
 						urls.add(link);
 				}
 
+				Cleaner.removeNoise(doc.outerHtml(), curCtr);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -248,4 +312,5 @@ public class QueueManager implements Runnable {
 		}
 
 	}
+	
 }

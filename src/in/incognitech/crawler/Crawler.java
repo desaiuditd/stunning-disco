@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Scanner;
-
 import in.incognitech.queue.QueueManager;
 
 public class Crawler {
@@ -87,9 +86,9 @@ public class Crawler {
 			return;
 		}
 
-    	QueueManager manager = new QueueManager(uri.toString(), pagesToCrawl);
+    	QueueManager manager = new QueueManager(uri.toString(), pagesToCrawl, restrictionDomain);
     	manager.downloadHTMLContent();
-    		
+    	
     	// URL
     	// max no to crawl
     	// restriction
