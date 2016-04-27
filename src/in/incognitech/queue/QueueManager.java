@@ -23,12 +23,13 @@ import org.jsoup.select.Elements;
 import in.incognitech.analyse.WordCount;
 import in.incognitech.cleaner.Cleaner;
 import in.incognitech.model.HTTPInfo;
+import in.incognitech.model.NewSiteUrl;
 import in.incognitech.model.SiteInfo;
 
 public class QueueManager implements Runnable {
 
 	SiteInfo sitesVisited;
-	BlockingQueue<String> newSites;
+	BlockingQueue<NewSiteUrl> newSites;
 	int MaxDownReq = 0;
 	Thread th;
 	final int maxdownThreads = 4;
@@ -44,8 +45,8 @@ public class QueueManager implements Runnable {
 	public QueueManager(String startSeed, int maxLinks, String RestrictDomain) {
 		Qtest = 1;
 		counter = 0;
-		newSites = new LinkedBlockingQueue<String>();
-		newSites.add(startSeed);
+		newSites = new LinkedBlockingQueue<NewSiteUrl>();
+		newSites.add(new NewSiteUrl(startSeed, "- NA since it's seed URL -"));
 		MaxDownReq = maxLinks;
 		Qsem = new Semaphore(1);
 		sourceLink = startSeed;
@@ -88,22 +89,83 @@ public class QueueManager implements Runnable {
 		try {
 			FileWriter fw = new FileWriter(resFile);
 			BufferedWriter bw = new BufferedWriter(fw);
-			bw.write("<!DOCTYPE html>" + "\n"+
-					"<html lang=\"en\">" + "\n" +
-						"<head>" +"\n"+
-							"    <meta charset=\"utf-8\">");
-			bw.write("<title>Crawl Result</title>");
-			bw.write("</head>");
-			bw.write("<body>");
-			bw.write("<table>");
-			bw.write("<tr><th>File</th><th>Status code</th><th>File on disk</th><th>link</th></tr>");
-			for (HTTPInfo info : arr) {
-				bw.write("<tr><td>"+info.getFName()+"</td><td>"+info.getHTTPStatus()+"</td><td>"+info.getFileLoc()+"</td><td><a href=\""+info.getLink()+"\">"+info.getLink()+"</a></td></tr>");
-			}
+			bw.write("<!DOCTYPE html>"
+						+ "<html lang=\"en\">"
 
-			bw.write("</table>");
-			bw.write("</body>");
-			bw.write("</html>");
+							+ "<head>"
+								+ "<meta charset=\"utf-8\">"
+								+ "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">"
+								+ "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+								+ "<title>Stunning Disco Web Crawler Report</title>"
+								+ "<link href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css\" rel=\"stylesheet\">"
+							+ "</head>"
+
+							+ "<body role=\"document\" style=\"padding-top: 70px; padding-bottom: 30px;\">"
+
+								+ "<nav class=\"navbar navbar-inverse navbar-fixed-top\">"
+									+ "<div class=\"container\">"
+										+ "<div class=\"navbar-header\">"
+											+ "<button type=\"button\" class=\"navbar-toggle collapsed\" data-toggle=\"collapse\" data-target=\"#navbar\" aria-expanded=\"false\" aria-controls=\"navbar\">"
+												+ "<span class=\"sr-only\">Toggle navigation</span>"
+												+ "<span class=\"icon-bar\"></span>"
+												+ "<span class=\"icon-bar\"></span>"
+												+ "<span class=\"icon-bar\"></span>"
+											+ "</button>"
+											+ "<a class=\"navbar-brand\" href=\"#\">Stunning Disco</a>"
+										+ "</div>"
+									+ "</div>"
+								+ "</nav>"
+
+								+ "<div class=\"container theme-showcase\" role=\"main\">"
+									+ "<div class=\"page-header\">"
+										+ "<h1>Report</h1>"
+										+ "<p class=\"bg-info text-muted\" style=\"padding: 15px;\">"
+											+ "- Seed: {{seed_url}}<br />"
+											+ "- Max. No. of URLs to crawl: {{max_no_crawl}}<br />"
+											+ "- Domain Restrictions: {{domain_restriction}}<br />"
+										+ "</p>"
+									+ "</div>"
+
+									+ "<div class=\"row\">"
+										+ "<div class=\"col-md-12 col-lg-12\">"
+											+ "<div class=\"table-responsive\">"
+												+ "<table class=\"table table-responsive table-striped table-bordered table-hover table-condensed\">"
+													+ "<thead>"
+														+ "<tr>"
+															+ "<th>#</th>"
+															+ "<th>URL with Title</th>"
+															+ "<th>Status Code</th>"
+															+ "<th>File on Disk</th>"
+															+ "<th># Outlinks</th>"
+															+ "<th># Images</th>"
+														+ "</tr>"
+													+ "</thead>"
+													+ "<tbody>");
+
+										if (arr.size() > 0) {
+											for( int i=0; i<arr.size(); i++ ) {
+												bw.write("<tr>"
+															+ "<td>"+(i+1)+"</td>"
+															+ "<td><a href=\"" + arr.get(i).getLink() + "\">" + arr.get(i).getTitle() + "</a></td>"
+															+ "<td>"+arr.get(i).getHTTPStatus()+"</td>"
+															+ "<td>"+arr.get(i).getFileLoc()+"</td>"
+															+ "<td>" + arr.get(i).getOutLinksCount() + "</td>"
+															+ "<td>" + arr.get(i).getImageCount() + "</td>"
+														+ "</tr>");
+											}
+										} else {
+											bw.write("<tr><td colspan=\"6\">No links found.</td></tr>");
+										}
+
+											bw.write("</tbody>"
+												+ "</table>"
+											+ "</div>"
+										+ "</div>"
+									+ "</div>"
+								+ "</div>"
+							+ "</body>"
+						+ "</html>");
+
 			bw.close();
 			fw.close();
 		} catch (IOException e) {
@@ -112,21 +174,21 @@ public class QueueManager implements Runnable {
 		}
 	}
 
-	protected synchronized void addlinksToQueue(ArrayList<String> links) {
+	protected synchronized void addlinksToQueue(ArrayList<NewSiteUrl> links) {
 		try {
 			Qsem.acquire();
 			ArrayList<HTTPInfo> curList = sitesVisited.getSitesArray();
-			for (String link : links) {
+			for (NewSiteUrl link : links) {
 				boolean linkFound = false;
 				for (HTTPInfo struct : curList) {
-					if (link.equals(struct.getLink())) {
+					if (link.getUrl().equals(struct.getLink())) {
 						linkFound = true;
 						break;
 					}
 				}
 				if (!linkFound) {
-					for (String l : newSites) {
-						if (link.equals(l)) {
+					for (NewSiteUrl l : newSites) {
+						if (link.getUrl().equals(l)) {
 							linkFound = true;
 							break;
 						}
@@ -192,9 +254,9 @@ public class QueueManager implements Runnable {
 
 		}
 
-		void DownloadwebPage(String surl) {
+		void DownloadwebPage(NewSiteUrl surl) {
 
-			System.out.println("Crawling for: " + surl);
+			System.out.println("Crawling for: " + surl.getUrl());
 
 			File dir = new File(HTMLPath);
 			if(!dir.exists() || !dir.isDirectory()){
@@ -206,13 +268,11 @@ public class QueueManager implements Runnable {
 
 			try {
 
-				URL url = new URL(surl);
+				URL url = new URL(surl.getUrl());
 				HttpURLConnection con = (HttpURLConnection) url.openConnection();
 				int conCode = con.getResponseCode();
 
 				if (conCode == 200) {
-					HTTPInfo st = new HTTPInfo(conCode, filename, surl);
-					sitesVisited.addds(st);
 					FileWriter fw = new FileWriter(file);
 					BufferedWriter bw = new BufferedWriter(fw);
 					InputStream is = con.getInputStream();
@@ -226,12 +286,15 @@ public class QueueManager implements Runnable {
 					bw.close();
 					br.close();
 					is.close();
-					ArrayList<String> links = getLinks(HTMLPath + filename, surl);
+					ArrayList<NewSiteUrl> links = getLinks(HTMLPath + filename, surl.getUrl());
+					int imageCount = getImageCount(HTMLPath + filename, surl.getUrl());
 					links = filterLinks(links);
 					addlinksToQueue(links);
 					Cleaner.saveCleanText(file.getAbsolutePath());
+					HTTPInfo st = new HTTPInfo(conCode, filename, surl.getUrl(), surl.getTitle(), links.size(), imageCount);
+					sitesVisited.addds(st);
 				} else {
-					HTTPInfo st = new HTTPInfo(conCode, "", surl);
+					HTTPInfo st = new HTTPInfo(conCode, "- NA since no webpage was downloaded -", surl.getUrl(), surl.getTitle(), 0, 0);
 					sitesVisited.addds(st);
 				}
 
@@ -245,13 +308,13 @@ public class QueueManager implements Runnable {
 
 		}
 
-		ArrayList<String> filterLinks(ArrayList<String> links) {
+		ArrayList<NewSiteUrl> filterLinks(ArrayList<NewSiteUrl> links) {
 			// This implements the code for checking the robots.txt file
-			ArrayList<String> neededLinks = new ArrayList<String>();
-			for(String link : links){
+			ArrayList<NewSiteUrl> neededLinks = new ArrayList<NewSiteUrl>();
+			for(NewSiteUrl link : links){
 				boolean addLink = true;
 				if(!DomRestrict.equals("")||DomRestrict.equals(null)){
-					if(link.indexOf(DomRestrict)<0){
+					if(link.getUrl().indexOf(DomRestrict)<0){
 						addLink = false;
 					}
 				}
@@ -264,8 +327,22 @@ public class QueueManager implements Runnable {
 			return neededLinks;
 		}
 
-		ArrayList<String> getLinks(String sfname, String url) {
-			ArrayList<String> urls = new ArrayList<String>();
+		int getImageCount(String sfname, String url) {
+			File file = new File(sfname);
+			int count = 0;
+			try {
+				Document doc = Jsoup.parse(file, "UTF-8");
+				Elements aLinks = doc.select("img");
+				count = aLinks.size();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return count;
+		}
+
+		ArrayList<NewSiteUrl> getLinks(String sfname, String url) {
+			ArrayList<NewSiteUrl> urls = new ArrayList<NewSiteUrl>();
 
 			File file = new File(sfname);
 			try {
@@ -277,6 +354,10 @@ public class QueueManager implements Runnable {
 					beginIndex = beginIndex + 6;
 					int endIndex = annotation.indexOf("\"", beginIndex);
 					String link = annotation.substring(beginIndex, endIndex);
+					String title = e.html();
+					if ( e.children().size() > 0 ) {
+						title = "- NA since it has a nested HTML markup -";
+					}
 
 					if (!link.startsWith("http")) {
 						if (link.length() > 1) {
@@ -290,7 +371,7 @@ public class QueueManager implements Runnable {
 					}
 					// System.out.println(link);
 					if (!link.equals(""))
-						urls.add(link);
+						urls.add(new NewSiteUrl(link, title));
 				}
 
 			} catch (IOException e) {
