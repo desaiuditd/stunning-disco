@@ -355,20 +355,6 @@ public class QueueManager implements Runnable {
 						}while(Content!=null &&( Content.startsWith("Allow") || Content.startsWith("DisAllow")));
 					}
 					
-					/*String disallow = "Disallow: ";
-					String pagePath = newURL.getPath();
-					while ((ptr=Content.indexOf("Disallow: ")) != -1) {
-						ptr+=disallow.length();	
-			    			String restrictedPath = Content.substring(ptr);
-						StringTokenizer st = new StringTokenizer(restrictedPath);
-						while(st.hasMoreTokens()) {	// loop or if
-							String restrictedFolder = st.nextToken();
-							if(pagePath.indexOf(restrictedFolder)!=1) // Or ==0
-								return false;
-						// if(pagePath.indexOf(restrictedPath)!=-1) return false;
-						}
-					}*/
-					
 				}
 				String sAllow = "";
 				for(String s : allowList){
