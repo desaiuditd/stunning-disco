@@ -91,6 +91,10 @@ public class Crawler {
     	// max no to crawl
     	// restriction
 
+    	System.out.println(uri.toString());
+    	System.out.println(pagesToCrawlStr);
+    	System.out.println(restrictionDomain);
+
     	QueueManager manager = new QueueManager(uri.toString(), pagesToCrawl, restrictionDomain);
     	manager.downloadHTMLContent();
 	}

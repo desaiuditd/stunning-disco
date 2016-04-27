@@ -26,29 +26,6 @@ public class Cleaner {
 		// TODO Auto-generated constructor stub
 	}
 
-	public static void removeNoise(String htmlMarkup, int ctr) {
-		// Remove Noise
-		String filename = ".\\TextRepository\\";
-		try {
-			File dir = new File(filename);
-			String output = ArticleExtractor.getInstance().getText(htmlMarkup);
-			if(!dir.exists()){
-				dir.mkdirs();
-			}
-			filename +=ctr + ".txt";
-			File file = new File(filename);
-			BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-			bw.write(output);
-			bw.close();
-		} catch (BoilerpipeProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
 	private static String readFile(String filePath) {
 		String content = "";
 		String line = "";
@@ -85,7 +62,7 @@ public class Cleaner {
 		String path = "./repository/text/";
 		File repoDir = new File(path);
 		if(!repoDir.exists() || !repoDir.isDirectory()) {
-			repoDir.mkdir();
+			repoDir.mkdirs();
 		}
 		File textFile = new File(path + fileName.replace("html", "txt"));
 		try {
@@ -97,13 +74,7 @@ public class Cleaner {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 	}
-
-	/*public static void main(String args[]) {
-		String htmlMarkup = Cleaner.downloadPage("https://rtcamp.com/blog/rtbiz-new-home/");
-		Cleaner.removeNoise(htmlMarkup);
-	}*/
 
 	private static String removeNoise(String htmlMarkup) {
 		// Remove Noise
