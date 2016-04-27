@@ -80,6 +80,7 @@ public class QueueManager implements Runnable {
 		GenerateCrawlReport();
 		WordCount analyse = new WordCount();
     	analyse.Analyze(TextPath);
+    	System.out.println("Process completed successfully. Please review the output files.");
 	}
 
 	void GenerateCrawlReport(){
