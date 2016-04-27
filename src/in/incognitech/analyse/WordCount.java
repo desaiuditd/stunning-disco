@@ -28,7 +28,8 @@ public class WordCount {
 				while ((line = br.readLine()) != null) {
 					String[] words = line.split(delimiters);
 					for (String word : words) {
-						if (!word.equals("")&&!word.equals(" ")) {
+						word.trim();
+						if (!word.equals("")&&!word.equals(" ") && !word.equals(null)) {
 							if (wordCount.containsKey(word)) {
 								int x = wordCount.get(word);
 								x++;

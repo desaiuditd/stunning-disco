@@ -189,7 +189,7 @@ public class QueueManager implements Runnable {
 				}
 				if (!linkFound) {
 					for (NewSiteUrl l : newSites) {
-						if (link.getUrl().equals(l)) {
+						if (link.getUrl().equals(l.getUrl())) {
 							linkFound = true;
 							break;
 						}
@@ -309,6 +309,104 @@ public class QueueManager implements Runnable {
 
 		}
 
+		public synchronized boolean RobotAllowed (String url) {
+			ArrayList<String> allowList = new ArrayList<String>();
+			ArrayList<String> disallowList = new ArrayList<String>();
+			try {
+				URL newURL = new URL(url);
+				String newBase = "http://" + newURL.getHost();
+				String newRobot = newBase + "/robots.txt";
+				URL Robot = new URL(newRobot);
+				HttpURLConnection con = (HttpURLConnection) Robot.openConnection();
+				int conCode = con.getResponseCode();
+				if(conCode!=200){
+					newBase = "https://" + newURL.getHost();
+					newRobot = newBase + "/robots.txt";
+					//System.out.println(newRobot);
+					Robot = new URL(newRobot);
+					con = (HttpURLConnection) Robot.openConnection();
+					conCode = con.getResponseCode();
+					if(conCode!=200)
+						return true;
+				}
+				InputStream RobotStream = con.getInputStream();
+				BufferedReader br = new BufferedReader(new InputStreamReader(RobotStream));
+				String Content = "";
+				while((Content = br.readLine()) != null){
+					//System.out.println(Content);
+					if(Content.equals("User-agent: *")){
+						Content = br.readLine();
+						
+						do{
+							Content.trim();
+							if(Content.startsWith("Allow")){
+								String newUrl = Content.substring(6);
+								newUrl = newBase + newUrl.trim();
+								allowList.add(newUrl);
+							}
+							else if(Content.startsWith("Disallow")){
+								String newUrl = Content.substring(9);
+								newUrl = newBase + newUrl.trim();
+								disallowList.add(newUrl);
+							}
+							Content = br.readLine();
+						}while(Content!=null &&( Content.startsWith("Allow") || Content.startsWith("DisAllow")));
+					}
+					
+					/*String disallow = "Disallow: ";
+					String pagePath = newURL.getPath();
+					while ((ptr=Content.indexOf("Disallow: ")) != -1) {
+						ptr+=disallow.length();	
+			    			String restrictedPath = Content.substring(ptr);
+						StringTokenizer st = new StringTokenizer(restrictedPath);
+						while(st.hasMoreTokens()) {	// loop or if
+							String restrictedFolder = st.nextToken();
+							if(pagePath.indexOf(restrictedFolder)!=1) // Or ==0
+								return false;
+						// if(pagePath.indexOf(restrictedPath)!=-1) return false;
+						}
+					}*/
+					
+				}
+				String sAllow = "";
+				for(String s : allowList){
+					if(url.contains(s)){
+						if(s.length()>sAllow.length()){
+							sAllow = s;
+						}
+					}
+				}
+				//System.out.println("Allowed URL : " + sAllow);
+				String sDisAllow = "";
+				for(String s : disallowList){
+					if(url.contains(s)){
+						if(s.length()>sDisAllow.length()){
+							sDisAllow = s;
+						}
+					}
+				}
+				//System.out.println("Disallowed URL : " + sDisAllow);
+				if(sAllow.length()>sDisAllow.length())
+					return true;
+				else
+					return false;
+				
+			} catch(NullPointerException e){
+				
+			}
+			catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				//e.printStackTrace();
+			}
+			
+			return true;
+		}
+
+		
+		
 		ArrayList<NewSiteUrl> filterLinks(ArrayList<NewSiteUrl> links) {
 			// This implements the code for checking the robots.txt file
 			ArrayList<NewSiteUrl> neededLinks = new ArrayList<NewSiteUrl>();
@@ -319,7 +417,9 @@ public class QueueManager implements Runnable {
 						addLink = false;
 					}
 				}
-				//Check for Robots.txt
+				if(addLink){
+					addLink = RobotAllowed(link.getUrl());
+				}
 
 				if(addLink){
 					neededLinks.add(link);
@@ -327,6 +427,7 @@ public class QueueManager implements Runnable {
 			}
 			return neededLinks;
 		}
+		
 
 		int getImageCount(String sfname, String url) {
 			File file = new File(sfname);
