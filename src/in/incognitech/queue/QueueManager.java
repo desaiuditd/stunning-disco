@@ -120,9 +120,9 @@ public class QueueManager implements Runnable {
 									+ "<div class=\"page-header\">"
 										+ "<h1>Report</h1>"
 										+ "<p class=\"bg-info text-muted\" style=\"padding: 15px;\">"
-											+ "- Seed: {{seed_url}}<br />"
-											+ "- Max. No. of URLs to crawl: {{max_no_crawl}}<br />"
-											+ "- Domain Restrictions: {{domain_restriction}}<br />"
+											+ "- Seed: <strong>" + this.sourceLink + "</strong><br />"
+											+ "- Max. No. of URLs to crawl: <strong>" + this.MaxDownReq + "</strong><br />"
+											+ "- Domain Restrictions: <strong>" + this.DomRestrict + "</strong><br />"
 										+ "</p>"
 									+ "</div>"
 
@@ -291,7 +291,7 @@ public class QueueManager implements Runnable {
 					links = filterLinks(links);
 					addlinksToQueue(links);
 					Cleaner.saveCleanText(file.getAbsolutePath());
-					HTTPInfo st = new HTTPInfo(conCode, filename, surl.getUrl(), surl.getTitle(), links.size(), imageCount);
+					HTTPInfo st = new HTTPInfo(conCode, file.getAbsolutePath(), surl.getUrl(), surl.getTitle(), links.size(), imageCount);
 					sitesVisited.addds(st);
 				} else {
 					HTTPInfo st = new HTTPInfo(conCode, "- NA since no webpage was downloaded -", surl.getUrl(), surl.getTitle(), 0, 0);
