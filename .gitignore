@@ -3,3 +3,8 @@
 .classpath
 .project
 .settings/
+.idea
+*.iml
+Report.html
+Result.csv
+repository/

@@ -71,6 +71,7 @@ public class QueueManager implements Runnable {
 	public void run() {
 		// TODO Auto-generated method stub
 		//System.out.println("Thread starts");
+		System.out.println("QTest: "+Qtest);
 		while (!newSites.isEmpty() || Qtest < 1) {
 			try {
 				Thread.sleep(1000);
@@ -223,7 +224,9 @@ public class QueueManager implements Runnable {
 		public void run() {
 			// TODO Auto-generated method stub
 			// System.out.println("Current Thread : "+this.toString());
+			System.out.println("QTest: "+Qtest);
 			while (!newSites.isEmpty() || Qtest < 1) {
+				System.out.println("MacDownReq: "+MaxDownReq+" counter: "+counter);
 				if (MaxDownReq != 0 && counter >= MaxDownReq) {
 					while (!newSites.isEmpty()) {
 						try {
@@ -405,9 +408,9 @@ public class QueueManager implements Runnable {
 						addLink = false;
 					}
 				}
-				if(addLink){
+				/*if(addLink){
 					addLink = RobotAllowed(link.getUrl());
-				}
+				}*/
 
 				if(addLink){
 					neededLinks.add(link);
@@ -440,6 +443,8 @@ public class QueueManager implements Runnable {
 				Elements aLinks = doc.select("a[href]");
 				for (Element e : aLinks) {
 					String annotation = e.outerHtml();
+					System.out.println(annotation);
+					String newlink = e.attr("href");
 					int beginIndex = annotation.indexOf("href");
 					beginIndex = beginIndex + 6;
 					int endIndex = annotation.indexOf("\"", beginIndex);
@@ -449,19 +454,20 @@ public class QueueManager implements Runnable {
 						title = "- NA since it has a nested HTML markup -";
 					}
 
-					if (!link.startsWith("http")) {
-						if (link.length() > 1) {
-							if (!link.startsWith("#"))
-								link = sourceLink + link.substring(1);
+					if (!newlink.startsWith("http")) {
+						if (newlink.length() > 1) {
+							if (!newlink.startsWith("#"))
+								newlink = sourceLink + newlink.substring(0);
 							else
-								link = "";
+								newlink = "";
 						} else {
-							link = "";
+							newlink = "";
 						}
 					}
-					// System.out.println(link);
-					if (!link.equals(""))
-						urls.add(new NewSiteUrl(link, title));
+					System.out.println("New Link");
+					 System.out.println(newlink);
+					if (!newlink.equals(""))
+						urls.add(new NewSiteUrl(newlink, title));
 				}
 
 			} catch (IOException e) {
